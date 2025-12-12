@@ -1,2 +1,3 @@
-export * from './register.dto'
-export * from './login.dto'
+export * from './registerRequest'
+export * from './loginRequest'
+export * from './auth.dto'

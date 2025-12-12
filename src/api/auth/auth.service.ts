@@ -1,20 +1,78 @@
-import {
-    ConflictException,
-    Injectable,
-    NotFoundException,
-    UnauthorizedException
-} from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import { JwtService } from '@nestjs/jwt'
-import { User } from '@prisma/client'
-import { hash, verify } from 'argon2'
-import { Request, Response } from 'express'
-import { PrismaService } from 'src/infra/prisma/prisma.service'
+import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { User } from '@prisma/client';
+import { hash, verify } from 'argon2';
+import { Request, Response } from 'express';
+import { PrismaService } from 'src/infra/prisma/prisma.service';
 
-import { isDev, ms, StringValue } from '../../common/utils'
 
-import { LoginDto, RegisterDto } from './dto'
-import { JwtPayload } from './interfaces'
+
+import { isDev, ms, StringValue } from '../../common/utils';
+
+
+
+import { LoginRequest, RegisterRequest } from './dto';
+import { JwtPayload } from './interfaces';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @Injectable()
 export class AuthService {
@@ -39,7 +97,7 @@ export class AuthService {
             configService.getOrThrow<StringValue>('COOKIES_DOMAIN')
     }
 
-    public async register(res: Response, dto: RegisterDto) {
+    public async register(res: Response, dto: RegisterRequest) {
         const { name, email, password } = dto
 
         const exists = await this.prismaService.user.findUnique({
@@ -66,7 +124,7 @@ export class AuthService {
         return this.auth(res, user)
     }
 
-    public async login(res: Response, dto: LoginDto) {
+    public async login(res: Response, dto: LoginRequest) {
         const { email, password } = dto
 
         const user = await this.prismaService.user.findUnique({
