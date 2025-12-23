@@ -1,12 +1,65 @@
-import { Module } from '@nestjs/common'
+import { Module } from '@nestjs/common';
 
-import { StripeModule } from '../providers/stripe/stripe.module'
 
-import { WebhookController } from './webhook.controller'
-import { WebhookService } from './webhook.service'
+
+import { CryptoModule } from '../providers/crypto/crypto.module';
+import { StripeModule } from '../providers/stripe/stripe.module';
+import { YoomoneyModule } from '../providers/yoomoney/yoomoney.module';
+
+
+
+import { WebhookController } from './webhook.controller';
+import { WebhookService } from './webhook.service';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @Module({
-    imports: [StripeModule],
+    imports: [YoomoneyModule, StripeModule, CryptoModule],
     controllers: [WebhookController],
     providers: [WebhookService]
 })
