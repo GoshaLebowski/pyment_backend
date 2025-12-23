@@ -1,16 +1,70 @@
-import { HttpService } from '@nestjs/axios'
-import { Injectable } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import { type Plan, type Transaction } from '@prisma/client'
-import { firstValueFrom } from 'rxjs'
+import { HttpService } from '@nestjs/axios';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { type Plan, type Transaction } from '@prisma/client';
+import { createHash, createHmac } from 'crypto';
+import { firstValueFrom } from 'rxjs';
 
-import { CRYPTOPAY_API_URL } from '../../constants'
 
-import {
-    CreateInvoiceRequest,
-    CryptoResponse,
-    FiatCurrency
-} from './interfaces'
+
+import { CRYPTOPAY_API_URL } from '../../constants';
+
+
+
+import { CreateInvoiceRequest, CryptoResponse, Currency, FiatCurrency } from './interfaces';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @Injectable()
 export class CryptoService {
@@ -26,7 +80,7 @@ export class CryptoService {
     public async create(plan: Plan, transaction: Transaction) {
         const payload: CreateInvoiceRequest = {
             amount: transaction.amount,
-            currency_type: 'fiat',
+            currency_type: Currency.FIAT,
             fiat: FiatCurrency.RUB,
             description: `Оплата подписки на тарифный план "${plan.title}"`,
             hidden_message: 'Спасибо за оплату! Подписка активирована',
@@ -40,6 +94,24 @@ export class CryptoService {
         )
 
         return response.result
+    }
+
+    public verifyWebhook(rawBody: Buffer, sig: string) {
+        const secret = createHash('sha256').update(this.TOKEN).digest()
+
+        const hmac = createHmac('sha256', secret).update(rawBody).digest('hex')
+
+        if (hmac !== sig) throw new UnauthorizedException('Invalid signature')
+
+        return true
+    }
+
+    public isFreshRequest(body: any, maxAgeSeconds: number = 300) {
+        const requestDate = new Date(body.request_date).getTime()
+
+        const now = Date.now()
+
+        return now - requestDate <= maxAgeSeconds * 1000
     }
 
     private async makeRequest<T>(
