@@ -5,6 +5,9 @@ import { ConfigModule } from '@nestjs/config';
 
 import { ApiModule } from './api/api.module';
 import { InfraModule } from './infra/infra.module';
+import { LibsModule } from './libs/libs.module';
+
+
 
 
 
@@ -34,7 +37,8 @@ import { InfraModule } from './infra/infra.module';
             isGlobal: true
         }),
         InfraModule,
-        ApiModule
+        ApiModule,
+        LibsModule
     ]
 })
 export class AppModule {}
