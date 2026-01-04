@@ -105,14 +105,8 @@ export class YoomoneyService {
 
         switch (dto.event) {
             case 'payment.waiting_for_capture':
-                await this.yookassaService.payments.capture(paymentId)
-                return {
-                    transactionId,
-                    planId,
-                    paymentId,
-                    status: TransactionStatus.PENDING,
-                    raw: dto
-                }
+                status = TransactionStatus.WAITING_FOR_CAPTURE
+                break
             case 'payment.succeeded':
                 status = TransactionStatus.SUCCEEDED
                 break
