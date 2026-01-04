@@ -1,12 +1,12 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { type Plan, type Transaction, TransactionStatus } from '@prisma/client';
+import { type Plan, type Transaction, TransactionStatus, type User } from '@prisma/client';
 import CIDR from 'ip-cidr';
-import { ConfirmationEnum, CurrencyEnum, PaymentMethodsEnum, YookassaService } from 'nestjs-yookassa';
+import { ConfirmationEnum, CurrencyEnum, PaymentMethodsEnum, VatCodesEnum, YookassaService } from 'nestjs-yookassa';
 
 
 
-import type { PaymentWebhookResult } from '../../interfaces'
-import { YookassaWebhookDto } from '../../webhook/dto'
+import type { PaymentWebhookResult } from '../../interfaces';
+import { YookassaWebhookDto } from '../../webhook/dto';
 
 
 
@@ -58,6 +58,42 @@ export class YoomoneyService {
         })
     }
 
+    public async createBySavedCard(
+        plan: Plan,
+        user: User,
+        transaction: Transaction
+    ) {
+        return await this.yookassaService.payments.create({
+            amount: {
+                value: transaction.amount,
+                currency: CurrencyEnum.RUB
+            },
+            description: `Рекуррентное списание за тариф "${plan.title}"`,
+            receipt: {
+                customer: {
+                    email: user.email
+                },
+                items: [
+                    {
+                        description: `Рекуррентное списание за тариф "${plan.title}"`,
+                        quantity: 1,
+                        amount: {
+                            value: transaction.amount,
+                            currency: CurrencyEnum.RUB
+                        },
+                        vat_code: VatCodesEnum.NDS_NONE
+                    }
+                ]
+            },
+            payment_method_id: transaction.externalId ?? '',
+            capture: true,
+            metadata: {
+                transactionId: transaction.id,
+                planId: plan.id
+            }
+        })
+    }
+
     public async handleWebhook(
         dto: YookassaWebhookDto
     ): Promise<PaymentWebhookResult> {
@@ -70,7 +106,13 @@ export class YoomoneyService {
         switch (dto.event) {
             case 'payment.waiting_for_capture':
                 await this.yookassaService.payments.capture(paymentId)
-                break
+                return {
+                    transactionId,
+                    planId,
+                    paymentId,
+                    status: TransactionStatus.PENDING,
+                    raw: dto
+                }
             case 'payment.succeeded':
                 status = TransactionStatus.SUCCEEDED
                 break
@@ -78,6 +120,8 @@ export class YoomoneyService {
                 status = TransactionStatus.FAILED
                 break
         }
+
+        console.log('Лог статуса:', status)
 
         return {
             transactionId,
