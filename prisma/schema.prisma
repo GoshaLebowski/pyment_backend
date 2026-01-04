@@ -115,8 +115,10 @@ enum PaymentProvider {
 
 enum TransactionStatus {
   PENDING
+  WAITING_FOR_CAPTURE
   SUCCEEDED
   FAILED
+  REFUNDED
 
   @@map("transaction_statuses")
 }

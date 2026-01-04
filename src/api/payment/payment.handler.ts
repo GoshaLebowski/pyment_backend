@@ -1,46 +1,12 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { BillingPeriod, SubscriptionStatus, TransactionStatus } from '@prisma/client';
+import { YookassaService } from 'nestjs-yookassa';
+import { PrismaService } from 'src/infra/prisma/prisma.service';
+import { MailService } from 'src/libs/mail/mail.service';
 
 
 
-import { PrismaService } from '../../infra/prisma/prisma.service';
-import { MailService } from '../../libs/mail/mail.service';
-
-
-
-import { PaymentWebhookResult } from './interfaces';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+import type { PaymentWebhookResult } from './interfaces';
 
 
 
@@ -74,7 +40,8 @@ export class PaymentHandler {
 
     public constructor(
         private readonly prismaService: PrismaService,
-        private readonly mailService: MailService
+        private readonly mailService: MailService,
+        private readonly yookassaService: YookassaService
     ) {}
 
     public async processResult(result: PaymentWebhookResult) {
@@ -108,6 +75,20 @@ export class PaymentHandler {
         })
 
         const subscription = transaction.subscription
+
+        if (status === TransactionStatus.WAITING_FOR_CAPTURE) {
+            try {
+                await this.yookassaService.payments.capture(paymentId)
+                this.logger.log(`Payment captured: ${paymentId}`)
+            } catch (error) {
+                this.logger.error(`Capture failed: ${error.message}`)
+                await this.prismaService.transaction.update({
+                    where: { id: transaction.id },
+                    data: { status: TransactionStatus.FAILED }
+                })
+            }
+            return { ok: true }
+        }
 
         if (
             status === TransactionStatus.SUCCEEDED &&
