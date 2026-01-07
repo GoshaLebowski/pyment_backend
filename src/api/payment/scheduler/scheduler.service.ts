@@ -18,7 +18,7 @@ export class SchedulerService {
         private readonly yoomoneyService: YoomoneyService
     ) {}
 
-    @Cron(CronExpression.EVERY_5_SECONDS)
+    @Cron(CronExpression.EVERY_12_HOURS)
     public async handleAutoBilling() {
         const users = await this.prismaService.user.findMany({
             where: {
