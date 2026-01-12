@@ -59,6 +59,8 @@ model UserSubscription {
   startDate DateTime? @map("start_date")
   endDate   DateTime? @map("end_date")
 
+  stripeSubscriptionId String? @unique @map("stripe_subscription_id")
+
   transactions Transaction[]
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
