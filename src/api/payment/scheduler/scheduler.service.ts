@@ -1,13 +1,38 @@
-import { Injectable, Logger } from '@nestjs/common'
-import { Cron, CronExpression } from '@nestjs/schedule'
-import {
-    PaymentProvider,
-    SubscriptionStatus,
-    TransactionStatus
-} from '@prisma/client'
+import { Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { PaymentProvider, SubscriptionStatus, TransactionStatus } from '@prisma/client';
 
-import { PrismaService } from '../../../infra/prisma/prisma.service'
-import { YoomoneyService } from '../providers/yoomoney/yoomoney.service'
+
+
+import { PrismaService } from '../../../infra/prisma/prisma.service';
+import { MailService } from '../../../libs/mail/mail.service';
+import { YoomoneyService } from '../providers/yoomoney/yoomoney.service';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @Injectable()
 export class SchedulerService {
@@ -15,6 +40,7 @@ export class SchedulerService {
 
     public constructor(
         private readonly prismaService: PrismaService,
+        private readonly mailService: MailService,
         private readonly yoomoneyService: YoomoneyService
     ) {}
 
@@ -103,6 +129,76 @@ export class SchedulerService {
                     )
                 }
             }
+        }
+    }
+
+    @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+    public async expireSubscription() {
+        const now = new Date()
+
+        const subscriptions =
+            await this.prismaService.userSubscription.findMany({
+                where: {
+                    status: SubscriptionStatus.ACTIVE,
+                    endDate: {
+                        lte: now
+                    }
+                },
+                include: {
+                    user: {
+                        include: {
+                            transactions: {
+                                where: {
+                                    status: TransactionStatus.SUCCEEDED
+                                },
+                                orderBy: {
+                                    createdAt: 'desc'
+                                },
+                                take: 1
+                            }
+                        }
+                    },
+                    plan: true
+                }
+            })
+
+        const filterSubscriptions = subscriptions.filter(sub => {
+            const lastTransaction = sub.user.transactions[0]
+
+            if (!lastTransaction) return false
+
+            switch (lastTransaction.provider) {
+                case PaymentProvider.YOOKASSA:
+                case PaymentProvider.STRIPE:
+                    return !sub.user.isAutoRenewal
+                case PaymentProvider.CRYPTOPAY:
+                    return true
+
+                default:
+                    return false
+            }
+        })
+
+        if (!filterSubscriptions.length) {
+            this.logger.log('No subscriptions to process')
+            return
+        }
+
+        for (const subscription of subscriptions) {
+            const user = subscription.user
+
+            await this.prismaService.userSubscription.update({
+                where: {
+                    id: subscription.id
+                },
+                data: {
+                    status: SubscriptionStatus.EXPIRED
+                }
+            })
+
+            await this.mailService.sendSubscriptionExpiredEmail(user)
+
+            this.logger.log(`Subscription expired for ${user.email}`)
         }
     }
 }
