@@ -111,7 +111,8 @@ export class StripeService {
             cancel_url: cancelUrl,
             metadata: {
                 transactionId: transaction.id,
-                planId: plan.id
+                planId: plan.id,
+                userId: user.id
             }
         })
     }
@@ -121,20 +122,40 @@ export class StripeService {
     ): Promise<PaymentWebhookResult | null> {
         switch (event.type) {
             case 'checkout.session.completed': {
-                const payment = event.data.object as Stripe.Checkout.Session
+                const session = await this.stripe.checkout.sessions.retrieve(
+                    event.data.object.id,
+                    { expand: ['line_items'] }
+                )
 
-                const transactionId = payment.metadata?.transactionId
-                const planId = payment.metadata?.planId
-                const paymentId = payment.id
+                const transactionId = session.metadata?.transactionId
+                const planId = session.metadata?.planId
+                const userId = session.metadata?.userId
+
+                const paymentId = session.id
 
                 if (!transactionId || !planId) return null
 
-                return {
-                    transactionId,
-                    planId,
-                    paymentId,
-                    status: TransactionStatus.SUCCEEDED,
-                    raw: event
+                const stripeSubscriptionId = session.subscription as string
+
+                if (userId && stripeSubscriptionId) {
+                    await this.prismaService.userSubscription.update({
+                        where: {
+                            userId
+                        },
+                        data: {
+                            stripeSubscriptionId
+                        }
+                    })
+                }
+
+                if (userId) {
+                    return {
+                        transactionId,
+                        planId,
+                        paymentId,
+                        status: TransactionStatus.SUCCEEDED,
+                        raw: event
+                    }
                 }
             }
             case 'invoice.payment_succeeded': {
@@ -179,6 +200,15 @@ export class StripeService {
             default:
                 return null
         }
+    }
+
+    public async updateAutoRenewal(
+        subscriptionId: string,
+        isAutoRenewal: boolean
+    ) {
+        await this.stripe.subscriptions.update(subscriptionId, {
+            cancel_at_period_end: !isAutoRenewal
+        })
     }
 
     public async parseEvent(
