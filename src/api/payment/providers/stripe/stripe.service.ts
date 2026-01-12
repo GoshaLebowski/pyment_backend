@@ -36,11 +36,41 @@ import { PaymentWebhookResult } from '../../interfaces';
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @Injectable()
 export class StripeService {
     private readonly stripe: Stripe
 
     private readonly WEBHOOK_SECRET: string
+
+    private readonly APP_URL: string
 
     public constructor(
         private readonly prismaService: PrismaService,
@@ -56,6 +86,8 @@ export class StripeService {
         this.WEBHOOK_SECRET = this.configService.getOrThrow<string>(
             'STRIPE_WEBHOOK_SECRET'
         )
+
+        this.APP_URL = this.configService.getOrThrow<string>('APP_URL')
     }
 
     public async create(
@@ -74,8 +106,8 @@ export class StripeService {
                 'Stripe priceId is messing for this plan'
             )
 
-        const successUrl = 'http://localhost:3000/'
-        const cancelUrl = this.configService.getOrThrow<string>('APP_URL')
+        const successUrl = `${this.APP_URL}/payment/${transaction.id}`
+        const cancelUrl = `${this.APP_URL}`
 
         let customerId = user.stripeCustomerId
 

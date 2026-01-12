@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { User } from '@prisma/client';
 
@@ -8,9 +8,37 @@ import { Authorized, Protected } from '../../common/decorators';
 
 
 
-import { PaymentHistoryResponse } from './dto';
-import { InitPaymentRequest } from './dto/init-payment.dto';
+import { InitPaymentRequest, InitPaymentResponse, PaymentDetailsResponse, PaymentHistoryResponse } from './dto';
 import { PaymentService } from './payment.service';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -44,6 +72,26 @@ export class PaymentController {
         return await this.paymentService.getHistory(user)
     }
 
+    @ApiOperation({
+        summary: 'Get payment by ID',
+        description: 'Returns detailed information about a specific transaction'
+    })
+    @ApiOkResponse({
+        type: PaymentDetailsResponse
+    })
+    @Get(':id')
+    public async getById(@Param('id') id: string) {
+        return await this.paymentService.getById(id)
+    }
+
+    @ApiOperation({
+        summary: 'Initiate a new payment',
+        description:
+            'Initializes a payment using the selected provider and billing period'
+    })
+    @ApiOkResponse({
+        type: InitPaymentResponse
+    })
     @Protected()
     @Post('init')
     public async init(

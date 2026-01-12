@@ -9,3 +9,11 @@ export class UpdateAutoRenewalRequest {
     @IsBoolean()
     isAutoRenewal: boolean
 }
+
+export class UpdateAutoRenewalResponse {
+    @ApiProperty({
+        example: true,
+        description: 'Enable or disable auto-renewal'
+    })
+    isAutoRenewal: boolean
+}

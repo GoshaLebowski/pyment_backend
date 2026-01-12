@@ -3,30 +3,12 @@ import { BillingPeriod, PaymentProvider, User } from '@prisma/client';
 
 
 
-import { PrismaService } from '../../infra/prisma/prisma.service';
+import { PrismaService } from '../../infra/prisma/prisma.service'
 
-
-
-import { InitPaymentRequest } from './dto/init-payment.dto';
-import { CryptoService } from './providers/crypto/crypto.service';
-import { StripeService } from './providers/stripe/stripe.service';
-import { YoomoneyService } from './providers/yoomoney/yoomoney.service';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+import { CryptoService } from './providers/crypto/crypto.service'
+import { StripeService } from './providers/stripe/stripe.service'
+import { YoomoneyService } from './providers/yoomoney/yoomoney.service'
+import { InitPaymentRequest } from './dto'
 
 
 
@@ -94,6 +76,34 @@ export class PaymentService {
             provider: payment.provider,
             status: payment.status
         }))
+    }
+
+    public async getById(id: string) {
+        const transaction = await this.prismaService.transaction.findUnique({
+            where: {
+                id
+            },
+            select: {
+                id: true,
+                billingPeriod: true,
+                subscription: {
+                    select: {
+                        plan: {
+                            select: {
+                                id: true,
+                                title: true,
+                                monthlyPrice: true,
+                                yearlyPrice: true
+                            }
+                        }
+                    }
+                }
+            }
+        })
+
+        if (!transaction) throw new NotFoundException('Транзакция не найдена')
+
+        return transaction
     }
 
     public async init(dto: InitPaymentRequest, user: User) {
@@ -172,6 +182,11 @@ export class PaymentService {
             }
         })
 
-        return payment
+        return {
+            url:
+                payment.url ||
+                payment.confirmation.confirmation_url ||
+                payment.mini_app_invoice_url
+        }
     }
 }

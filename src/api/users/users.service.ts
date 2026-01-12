@@ -38,12 +38,54 @@ import { UpdateAutoRenewalRequest } from './dto';
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @Injectable()
 export class UsersService {
     public constructor(
         private readonly prismaService: PrismaService,
         private readonly stripeService: StripeService
     ) {}
+
+    public async getMe(id: string) {
+        return this.prismaService.user.findUnique({
+            where: {
+                id
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                subscription: {
+                    select: {
+                        status: true,
+                        startDate: true,
+                        endDate: true,
+                        plan: {
+                            select: {
+                                id: true,
+                                title: true,
+                                monthlyPrice: true,
+                                yearlyPrice: true
+                            }
+                        }
+                    }
+                }
+            }
+        })
+    }
 
     public async updateAutoRenewal(user: User, dto: UpdateAutoRenewalRequest) {
         const { isAutoRenewal } = dto
