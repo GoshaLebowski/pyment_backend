@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { type Plan, type Transaction, TransactionStatus, type User } from '@prisma/client';
 import CIDR from 'ip-cidr';
 import { ConfirmationEnum, CurrencyEnum, PaymentMethodsEnum, VatCodesEnum, YookassaService } from 'nestjs-yookassa';
@@ -20,11 +21,36 @@ import { YookassaWebhookDto } from '../../webhook/dto';
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @Injectable()
 export class YoomoneyService {
     private readonly ALLOWED_IPS: string[]
 
-    public constructor(private readonly yookassaService: YookassaService) {
+    private readonly APP_URL: string
+
+    public constructor(
+        private readonly yookassaService: YookassaService,
+        private readonly configService: ConfigService
+    ) {
+        this.APP_URL = this.configService.getOrThrow<string>('APP_URL')
+
         this.ALLOWED_IPS = [
             '185.71.76.0/27',
             '185.71.77.0/27',
@@ -37,6 +63,8 @@ export class YoomoneyService {
     }
 
     public async create(plan: Plan, transaction: Transaction) {
+        const successUrl = `${this.APP_URL}/payment/${transaction.id}`
+
         return this.yookassaService.payments.create({
             amount: {
                 value: transaction.amount,
@@ -48,7 +76,7 @@ export class YoomoneyService {
             },
             confirmation: {
                 type: ConfirmationEnum.REDIRECT,
-                return_url: 'http://localhost:3000/'
+                return_url: successUrl
             },
             save_payment_method: true,
             metadata: {
@@ -114,8 +142,6 @@ export class YoomoneyService {
                 status = TransactionStatus.FAILED
                 break
         }
-
-        console.log('Лог статуса:', status)
 
         return {
             transactionId,

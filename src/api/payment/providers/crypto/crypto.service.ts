@@ -70,25 +70,94 @@ import { CreateInvoiceRequest, CryptoResponse, Currency, FiatCurrency, InvoiceSt
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @Injectable()
 export class CryptoService {
     private readonly TOKEN: string
+
+    private readonly APP_URL: string
 
     public constructor(
         private readonly configService: ConfigService,
         private readonly httpService: HttpService
     ) {
         this.TOKEN = this.configService.getOrThrow<string>('CRYPTO_PAY_TOKEN')
+
+        this.APP_URL = this.configService.getOrThrow<string>('APP_URL')
     }
 
     public async create(plan: Plan, transaction: Transaction) {
+        const successUrl = `${this.APP_URL}/payment/${transaction.id}`
+
         const payload: CreateInvoiceRequest = {
             amount: transaction.amount,
             currency_type: Currency.FIAT,
             fiat: FiatCurrency.RUB,
             description: `Оплата подписки на тарифный план "${plan.title}"`,
             hidden_message: 'Спасибо за оплату! Подписка активирована',
-            paid_btn_url: 'http://localhost:3000',
+            paid_btn_url: successUrl,
             payload: Buffer.from(
                 JSON.stringify({
                     transactionId: transaction.id,
