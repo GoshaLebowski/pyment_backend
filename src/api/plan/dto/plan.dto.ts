@@ -26,7 +26,8 @@ export class PlanResponse {
             'Priority support',
             'Advanced analytics'
         ],
-        isArray: true
+        isArray: true,
+        type: String
     })
     features: string[]
 

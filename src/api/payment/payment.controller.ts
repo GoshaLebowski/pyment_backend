@@ -67,7 +67,7 @@ export class PaymentController {
         type: [PaymentHistoryResponse]
     })
     @Protected()
-    @Get()
+    @Get('/history')
     public async getHistory(@Authorized() user: User) {
         return await this.paymentService.getHistory(user)
     }

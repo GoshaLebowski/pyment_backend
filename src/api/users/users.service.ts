@@ -4,25 +4,9 @@ import { PaymentProvider, TransactionStatus, User } from '@prisma/client';
 
 
 import { PrismaService } from '../../infra/prisma/prisma.service';
-import { StripeService } from '../payment/providers/stripe/stripe.service';
+import { StripeService } from '../payment/providers/stripe/stripe.service'
 
-
-
-import { UpdateAutoRenewalRequest } from './dto';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+import { UpdateAutoRenewalRequest } from './dto'
 
 
 
@@ -68,6 +52,7 @@ export class UsersService {
                 id: true,
                 name: true,
                 email: true,
+                isAutoRenewal: true,
                 subscription: {
                     select: {
                         status: true,
