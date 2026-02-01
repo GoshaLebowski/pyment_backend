@@ -106,7 +106,7 @@ export class StripeService {
                 'Stripe priceId is messing for this plan'
             )
 
-        const successUrl = `${this.APP_URL}/payment/${transaction.id}`
+        const successUrl = `${this.APP_URL}/payment/${transaction.id}/success`
         const cancelUrl = `${this.APP_URL}`
 
         let customerId = user.stripeCustomerId
